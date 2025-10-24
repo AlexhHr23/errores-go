@@ -1,75 +1,113 @@
 package main
 
-// "errors"
+import (
+	"bufio"
+	"encoding/json"
+	"fmt"
+	"os"
+)
 
-// func divide(dividendo, divisor int) (int, error) {
-// 	if divisor == 0 {
-// 		return 0, fmt.Errorf("No se puede dividir por cero")
-// 	}
-// 	return dividendo / divisor, nil
-// }
+type Contact struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Phone string `json:"phone"`
+}
 
-// func divide(dividendo, divisor int) {
-// 	defer func() {
-// 		if r := recover(); r != nil {
-// 			fmt.Println(r)
-// 		}
-// 	}()
-// 	validateZero(divisor)
-// 	fmt.Println(dividendo / divisor)
-// }
+// Save contacts in json file
+func saveContacsToFile(contacs []Contact) error {
+	file, err := os.Create("contacts.json")
+	if err != nil {
+		return err
+	}
 
-// func validateZero(divisor int) {
-// 	if divisor == 0 {
-// 		panic("No se puede dividir por cero")
-// 	}
-// }
+	defer file.Close()
+	encoder := json.NewEncoder(file)
+	err = encoder.Encode(contacs)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Load contacts from file json
+func loadContactsFromFile(contacts *[]Contact) error {
+	file, err := os.Open("contacts.json")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&contacts)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func main() {
-	//! Manejo de errores
-	// result, err := divide(10, 0)
 
-	// if err != nil {
-	// 	fmt.Println("Error: ", err)
-	// 	return
-	// }
+	//Slice by contacts
+	var contacts []Contact
 
-	// fmt.Println("Resultado: ", result)
+	//load exist contacts
+	err := loadContactsFromFile(&contacts)
 
-	//!Defer- pospone la ejecucion de esa funcion hasta antes de cerrar el flujo
-	// file, err := os.Create("Hola.text")
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return
-	// }
+	if err != nil {
+		fmt.Println("Error al cargar los contactos: ", err)
+	}
 
-	// defer file.Close()
+	reader := bufio.NewReader(os.Stdin)
 
-	// _, err = file.Write([]byte("Hola Alex, estoy tomando el curso go"))
+	for {
+		fmt.Print("=== Gestor de contactos === \n",
+			"1. Agregar contacto \n",
+			"2. Mostrar todos los contactos \n",
+			"3. Salir \n",
+			"Elige una opcion: ")
 
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return
-	// }
+		var option int
+		_, err := fmt.Scanln(&option)
+		if err != nil {
+			fmt.Println("Error al leer la opcion: ", err)
+			return
+		}
 
-	//!panic y recover
-	//Panic-generar una interrupcion inmediata
-	//Panic y recover solo se recomienda usar para casos excepcionales o errores graves, no se recomienda
-	// para control de errores normal, solo para situaciones inesperadas
+		//Manejar las opciones del usuario
+		switch option {
+		case 1:
+			// Ingrear y crear contacto
+			var c Contact
+			fmt.Print("Ingrese nombre: ")
+			c.Name, _ = reader.ReadString('\n')
+			fmt.Print("Ingrese Email: ")
+			c.Email, _ = reader.ReadString('\n')
+			fmt.Print("Ingrese telefono: ")
+			c.Phone, _ = reader.ReadString('\n')
 
-	// divide(100, 10)
-	// divide(200, 25)
-	// divide(34, 0)
-	// divide(100, 4)
+			//Agregar un concto a slice
+			contacts = append(contacts, c)
 
-	//!Registro de errores
-	// log.SetPrefix("main(): ")
-	// file, err := os.OpenFile("info.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+			//Guardar contacto en un archivo json
+			if err := saveContacsToFile(contacts); err != nil {
+				fmt.Println("Error al guardar el contacto", err)
+			}
+		case 2:
+			fmt.Println("=============================")
+			for index, contact := range contacts {
+				fmt.Printf("%d. Nombre: %s Email: %s Telefomo: %s\n", index+1, contact.Name, contact.Email, contact.Email)
+			}
+			fmt.Println("=======================")
 
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// defer file.Close()
-	// log.SetOutput(file)
-	// log.Print("!Oye, soy un log")
+		case 3:
+			return
+
+		default:
+			fmt.Println("Opcion invalida")
+		}
+
+	}
+
 }
